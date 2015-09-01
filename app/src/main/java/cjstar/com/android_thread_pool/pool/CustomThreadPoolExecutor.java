@@ -13,7 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by xuchun on 15/8/31.
+ * Created by CJstar on 15/8/31.
  */
 public class CustomThreadPoolExecutor implements CustomExecutor {
 

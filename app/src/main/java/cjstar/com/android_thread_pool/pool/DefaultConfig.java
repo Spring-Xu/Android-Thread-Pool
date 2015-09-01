@@ -1,7 +1,7 @@
 package cjstar.com.android_thread_pool.pool;
 
 /**
- * Created by xuchun on 15/8/31.
+ * Created by CJstar on 15/8/31.
  */
 public class DefaultConfig {
     /**

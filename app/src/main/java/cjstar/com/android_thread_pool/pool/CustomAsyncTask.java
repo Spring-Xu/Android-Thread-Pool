@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <Params>
  * @param <Progress>
  * @param <Result>
- * @author xuchun 2014-11-6
+ * @author CJstar 2015-9-1
  */
 public abstract class CustomAsyncTask<Params, Progress, Result>{
 
