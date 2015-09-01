@@ -1,17 +1,26 @@
 # Android-Thread-Pool
 A simple thread pool for Android, this pool is base on Handler and Runable
 
+#Contact me
+hquspring@gmail.com
+
 # How to use?
-1.Create instance
+
+* Create instance
+```Java
 CustomExecutor executor = new CustomThreadPoolExecutor.Builder()
                 .setMaxExecutingSize(5)
                 .setMaxInterval(1000)
                 .setMaxPoolSize(100)
                 .build();
+```
 OR
+```Java
 //get default Executor with default config
 CustomExecutor DEFAULT_THREAD_POOL_EXECUTOR = new CustomThreadPoolExecutor();
-2.Use pool
+```
+* Use pool
+```Java
 Runnable run = new Runnable() {
                 @Override
                 public void run() {
@@ -23,8 +32,9 @@ Runnable run = new Runnable() {
                 }
             };
  executor.execute(run);
-
-3.Use CustomAsyncTask
+```
+* Use CustomAsyncTask
+```Java
 CustomAsyncTask<Void,Void,String> task = new CustomAsyncTask<Void, Void, String>() {
                     /**
                      * Runs on the UI thread before {@link #doInBackground}.
@@ -62,3 +72,4 @@ CustomAsyncTask<Void,Void,String> task = new CustomAsyncTask<Void, Void, String>
                 };
 
 task.executeOnExecutor(executor);
+```
