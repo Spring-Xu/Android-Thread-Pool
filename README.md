@@ -2,8 +2,8 @@
 A simple thread pool for Android, this pool is base on Handler and Runable
 
 #Contact me
-*Email:hquspring@gmail.com
-*Blog:http://write.blog.csdn.net/postlist
+* Email:hquspring@gmail.com
+* Blog:http://write.blog.csdn.net/postlist
 
 # How to use?
 
