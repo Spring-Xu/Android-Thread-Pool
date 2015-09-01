@@ -6,14 +6,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * custom AsyncTask , the same as AsyncTask, but it can be created in other
@@ -27,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <Result>
  * @author xuchun 2014-11-6
  */
-public abstract class CustomAsyncTask<Params, Progress, Result> {
+public abstract class CustomAsyncTask<Params, Progress, Result>{
 
     private static String TAG = "CustomAsyncTask";
 
@@ -46,25 +39,10 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
      */
     private TaskThread mFuture;
     private Params[] mParams;
-    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-    private static final int CORE_POOL_SIZE = CPU_COUNT + 1;
-    private static final int MAXIMUM_POOL_SIZE = CPU_COUNT * 2 + 1;
-    private static final int KEEP_ALIVE = 1;
-    private static final BlockingQueue<Runnable> sPoolWorkQueue = new LinkedBlockingQueue<Runnable>(128);
-    private static final ThreadFactory sThreadFactory = new ThreadFactory() {
-        private final AtomicInteger mCount = new AtomicInteger(1);
-
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "CustomAsyncTask #" + mCount.getAndIncrement());
-        }
-    };
-
-    private static Handler mainHandler = new Handler(Looper.getMainLooper());
     /**
      * the task pool manager,the same as {@link AsyncTask#THREAD_POOL_EXECUTOR}
      */
-    public static final Executor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE, TimeUnit.SECONDS, sPoolWorkQueue, sThreadFactory);
+    private static final CustomExecutor DEFAULT_THREAD_POOL_EXECUTOR = new CustomThreadPoolExecutor();
 
     /**
      * it will be called in a thread which is not UI thread
@@ -77,25 +55,24 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
     /**
      * Runs on the UI thread before {@link #doInBackground}.
      * But this method will not be executed when we call the {@link #execute()} or {@link #execute(Object...)}
-     * or {@link #executeOnExecutor(Executor)} or {@link #executeOnExecutor(Executor, Object...).
+     * or {@link #executeOnExecutor(CustomExecutor)} or {@link #executeOnExecutor(CustomExecutor, Object...).
      * It will be call when UI thread handled out. So, this method will not been called as soon as the execute called
      *
      * @see #onPostExecute
      * @see #doInBackground
      */
     protected void onPreExecute() {
-        mStatus = Status.PENDING;
     }
 
     /**
      * execute the task , the doInBackground will be call in a thread which is
      * not UI thread; and all the task will be managed in a thread pool, this
-     * pool has a max size of 128 {@link #THREAD_POOL_EXECUTOR} normally. you
+     * pool has a max size of 128 {@link #DEFAULT_THREAD_POOL_EXECUTOR} normally. you
      * can provide the executor at the same time.
      *
      * @param executor
      */
-    public void executeOnExecutor(final Executor executor) {
+    public void executeOnExecutor(final CustomExecutor executor) {
         // Get a handler that can be used to post to the main thread
         Runnable myRunnable = new Runnable() {
             @Override
@@ -119,22 +96,22 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
     /**
      * execute the task , the doInBackground will be call in a thread which is
      * not UI thread; and all the task will be managed in a thread pool, this
-     * pool has a max size of 128 {@link #THREAD_POOL_EXECUTOR} normally. you
+     * pool has a max size of 128 {@link #DEFAULT_THREAD_POOL_EXECUTOR} normally. you
      * can provide the executor at the same time.
      *
      * @param
      * @param executor
      */
-    public void executeOnExecutor(final Executor executor, Params... params) {
+    public void executeOnExecutor(final CustomExecutor executor, Params... params) {
         // Get a handler that can be used to post to the main thread
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                mStatus = Status.RUNNING;
                 onPreExecute();
                 mFuture = new TaskThread();
                 try {
                     executor.execute(mFuture);
-                    mStatus = Status.RUNNING;
                 } catch (Throwable t) {
                     mStatus = Status.FINISHED;
                     t.printStackTrace();
@@ -158,10 +135,10 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                mStatus = Status.RUNNING;
                 onPreExecute();
                 mFuture = new TaskThread();
-                mStatus = Status.RUNNING;
-                mFuture.start();
+                DEFAULT_THREAD_POOL_EXECUTOR.execute(mFuture);
             }
         };
 
@@ -179,10 +156,10 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                mStatus = Status.RUNNING;
                 onPreExecute();
                 mFuture = new TaskThread();
-                mStatus = Status.RUNNING;
-                mFuture.start();
+                DEFAULT_THREAD_POOL_EXECUTOR.execute(mFuture);
             }
         };
 
@@ -292,8 +269,8 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
             mCancelled.set(true);
             onCancelled();
 
-            if (mFuture != null && !mFuture.isInterrupted()) {
-                return mFuture.interrupted();
+            if (mFuture != null ) {
+                return true;
             } else {
                 return false;
             }
@@ -309,11 +286,8 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
      *
      * @author xuchun
      */
-    private class TaskhHandler extends Handler {
-        public TaskhHandler(Looper mainLooper) {
-            super(mainLooper);
-        }
 
+    private  Handler mainHandler = new Handler(Looper.getMainLooper()){
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
@@ -323,7 +297,7 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
                 doPostExecute(mResult);
             }
         }
-    }
+    };
 
     /**
      * TaskThread extends Thread and we can use the thread to execute the
@@ -331,10 +305,9 @@ public abstract class CustomAsyncTask<Params, Progress, Result> {
      *
      * @author xuchun
      */
-    private class TaskThread extends Thread {
+    private class TaskThread implements Runnable {
         @Override
         public void run() {
-            super.run();
             Result mResult = doInBackground(mParams);
             mStatus = Status.FINISHED;
             Message msg = new Message();

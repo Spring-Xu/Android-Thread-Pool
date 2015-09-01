@@ -1,14 +1,29 @@
 package cjstar.com.android_thread_pool.pool;
 
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by xuchun on 15/8/31.
  */
 public class CustomThreadPoolExecutor implements CustomExecutor {
 
+    private static String TAG = "CustomThreadPoolExecutor";
+
     private BlockingQueue<Runnable> mQueue;
+
+    private List<Worker> workers;
+
+    private Lock locker = new ReentrantLock();
 
     /**
      * max pool size
@@ -23,6 +38,11 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
      */
     private int maxInterval;
 
+    private boolean isShoutDown = false;
+
+    /**
+     * Get the instance which has the default config, you can see {@link DefaultConfig}
+     */
     public CustomThreadPoolExecutor() {
         this.maxExecutingSize = DefaultConfig.DEFAULT_MAX_EXECUTINGSIZE;
         this.maxPoolSize = DefaultConfig.DEFAULT_MAX_POOL_SIZE;
@@ -44,6 +64,9 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
         init();
     }
 
+    /**
+     * initialize the thread pool and params
+     */
     private void init(){
         if(this.maxPoolSize<=0){
             throw new IllegalArgumentException("CustomThreadPoolExecutor maxPoolSize is illegal:"+this.maxPoolSize);
@@ -58,20 +81,8 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
         }
 
         mQueue = new LinkedBlockingQueue<Runnable>(maxPoolSize);
-    }
 
-
-    /**
-     * Execute the customAsyncTask in a background thread and the {@link CustomAsyncTask#onPreExecute()}</br>
-     * will be called at main thread before {@link CustomAsyncTask#doInBackground(Object[])}, </br>
-     * and the {@link CustomAsyncTask#onPostExecute(Object)} will be called after<br/>
-     * {@link CustomAsyncTask#doInBackground(Object[])}
-     *
-     * @param customAsyncTask
-     */
-    @Override
-    public void execute(CustomAsyncTask customAsyncTask) {
-
+        workers = Collections.synchronizedList(new ArrayList<Worker>());
     }
 
     /**
@@ -81,7 +92,57 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
      */
     @Override
     public void execute(Runnable runnable) {
+        offerRunnable(runnable);
+    }
 
+    private void offerRunnable(Runnable runnable){
+        if(runnable==null){
+            throw new NullPointerException("CustomThreadPoolExecutor # execute customAsyncTask is null");
+        }
+
+        if(isShoutDown){
+            throw  new PoolFullException("CustomThreadPoolExecutor pool is shout downed");
+        }
+
+        locker.lock();
+
+        if(isPoolFull()){
+            throw new PoolFullException();
+        }
+
+        if(isExcutingPoolFull()){
+            mQueue.offer(runnable);
+        }else {
+            Worker worker = new TaskWorker(runnable);
+            workers.add(worker);
+            worker.work();
+        }
+
+        locker.unlock();
+    }
+
+    /**
+     * Get the excuting pool size, if it is larger than {@link #maxExecutingSize} return true, else return false
+     * @return
+     */
+    public boolean isExcutingPoolFull(){
+        Log.d(TAG,"isExcutingPoolFull workers size:"+workers.size() +" maxExecutingSize:"+maxExecutingSize);
+        return workers.size()>=maxExecutingSize;
+    }
+
+
+    public boolean isPoolFull(){
+        Log.d(TAG,"isPoolFull mQueue size:"+mQueue.size() +" maxPoolSize:"+maxPoolSize);
+        return mQueue.size()>=maxPoolSize;
+    }
+
+    @Override
+    public void shoutDown() {
+        locker.lock();
+        isShoutDown = true;
+        mQueue.clear();
+        workers.clear();
+        locker.unlock();
     }
 
     /**
@@ -135,24 +196,70 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
      */
     class TaskWorker implements Worker {
 
+        private Runnable runnable;
+        private HandlerThread handlerThread;
+        private Handler currentHandler;
+        public TaskWorker(Runnable run){
+            runnable = run;
+        }
+
         @Override
         public void afterWork() {
+            locker.lock();
+            Log.d(TAG, "TaskWorker afterWork");
+            if(hasNext()){
+                try{
+                    Runnable run = mQueue.take();
+                    workFor(run);
+                    Log.d(TAG, "TaskWorker worker for next");
+                }catch (InterruptedException i){
+                    i.printStackTrace();
 
+                }finally {
+                    locker.unlock();
+                }
+
+            }else {
+                // recycle worker
+                handlerThread.quit();
+                workers.remove(this);
+                locker.unlock();
+                Log.d(TAG, "TaskWorker finish");
+            }
         }
 
         @Override
         public void work() {
+            if(runnable==null) {
+                throw new NullPointerException("runnable is null");
+            }
 
+            preWork();
+            handlerThread = new HandlerThread("TaskWorker#"+System.currentTimeMillis());
+            handlerThread.start();
+            currentHandler = new Handler(handlerThread.getLooper());
+            workFor(runnable);
+        }
+
+        private void workFor(final Runnable run){
+            Log.d(TAG,"workFor");
+            currentHandler.post( new Runnable() {
+                @Override
+                public void run() {
+                    run.run();
+                    afterWork();
+                }
+            });
         }
 
         @Override
         public void preWork() {
-
+            Log.d(TAG, "TaskWorker preWork");
         }
 
         @Override
         public boolean hasNext() {
-            return false;
+            return !mQueue.isEmpty();
         }
     }
 }

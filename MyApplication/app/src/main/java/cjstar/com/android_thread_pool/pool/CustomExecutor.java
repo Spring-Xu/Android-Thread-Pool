@@ -11,10 +11,7 @@ public interface CustomExecutor {
     public void execute(Runnable runnable);
 
     /**
-     * Execute the customAsyncTask in a background thread and the {@link CustomAsyncTask#onPreExecute()}</br>
-     * will be called at main thread before {@link CustomAsyncTask#doInBackground(Object[])}, </br>
-     * and the {@link CustomAsyncTask#onPostExecute(Object)} will be called after {@link CustomAsyncTask#doInBackground(Object[])}
-     * @param customAsyncTask
+     * shout the thread pool
      */
-    public void execute(CustomAsyncTask customAsyncTask);
+    public void shoutDown();
 }
