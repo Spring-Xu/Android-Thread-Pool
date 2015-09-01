@@ -2,6 +2,7 @@ package cjstar.com.customthreadpoollibrary;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -274,7 +275,7 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
 
     private void d(String str) {
         if (ISDEBUG) {
-            d(str);
+            Log.d(TAG,str);
         }
     }
 }
