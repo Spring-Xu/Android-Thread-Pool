@@ -53,7 +53,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.add_runnable:
-                handler.post(handlerRun);
+                new Thread(){
+                    public void run(){
+                        for(int i=0; i<100; i++){
+                            handler.post(newRun(i));
+                        }
+                    }
+                }.start();
                 break;
 
             case R.id.add_asynctask:
@@ -93,7 +99,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 };
 
-                task.executeOnExecutor(executor);
+                task.execute();
+//                task.executeOnExecutor(executor);
                 break;
 
             default:break;
@@ -103,10 +110,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     CustomExecutor executor;
     private void createPool(){
         executor = new CustomThreadPoolExecutor.Builder()
-                .setMaxExecutingSize(5)
+                .setMaxExecutingSize(10)
                 .setMaxInterval(1000)
                 .setMaxPoolSize(100)
                 .build();
+    }
+
+    private Runnable newRun(final int i){
+        return new Runnable() {
+            @Override
+            public void run() {
+                Runnable run = new Runnable() {
+                    @Override
+                    public void run() {
+                        try{
+                            Log.d("Runnable run", "Thread id = "+Looper.myLooper().getThread().getId());
+                            Thread.sleep(i*10);
+                        }catch (InterruptedException i){
+                        }
+                    }
+                };
+                executor.execute(run);
+            }
+        };
     }
 
     Runnable handlerRun = new Runnable() {

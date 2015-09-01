@@ -5,15 +5,15 @@ package cjstar.com.customthreadpoollibrary;
  */
 public class DefaultConfig {
     /**
-     * max pool size
-     */
-    public static  int DEFAULT_MAX_POOL_SIZE = 128;
-    /**
      * max execute threads count at the same time
      */
-    public static  int DEFAULT_MAX_EXECUTINGSIZE = 7;
+    public static final int DEFAULT_MAX_EXECUTINGSIZE =  Runtime.getRuntime().availableProcessors();
     /**
      * the thread max interval time at each of them (mills)
      */
-    public static  int DEFAULT_MAX_INTERVAL = 1000;
+    public static final int DEFAULT_MAX_INTERVAL = 1000;
+    /**
+     * max pool size
+     */
+    public static final int DEFAULT_MAX_POOL_SIZE = 128;
 }

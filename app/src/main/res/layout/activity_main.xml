@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:text="add a runnable"/>
+        android:text="test asynctask"/>
 
     <Button
         android:id="@+id/shout_down_pool"
