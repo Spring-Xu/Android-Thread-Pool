@@ -12,9 +12,9 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import cjstar.com.android_thread_pool.R;
-import cjstar.com.android_thread_pool.pool.CustomAsyncTask;
-import cjstar.com.android_thread_pool.pool.CustomExecutor;
-import cjstar.com.android_thread_pool.pool.CustomThreadPoolExecutor;
+import cjstar.com.customthreadpoollibrary.CustomAsyncTask;
+import cjstar.com.customthreadpoollibrary.CustomExecutor;
+import cjstar.com.customthreadpoollibrary.CustomThreadPoolExecutor;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 

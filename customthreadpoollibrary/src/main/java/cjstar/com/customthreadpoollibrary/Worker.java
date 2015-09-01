@@ -1,4 +1,4 @@
-package cjstar.com.android_thread_pool.pool;
+package cjstar.com.customthreadpoollibrary;
 
 /**
  * Created by CJstar on 15/8/31.

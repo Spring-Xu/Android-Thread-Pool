@@ -1,4 +1,4 @@
-package cjstar.com.android_thread_pool.pool;
+package cjstar.com.customthreadpoollibrary;
 
 /**
  * Custom executor for Threads, it content executors for {@link Runnable} and {@link CustomAsyncTask}
