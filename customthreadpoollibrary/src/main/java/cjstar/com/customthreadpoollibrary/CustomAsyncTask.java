@@ -9,11 +9,14 @@ import android.util.Log;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * custom AsyncTask , the same as AsyncTask, but it can be created in other
- * Thread which is not main Thread or use this in UI thread.</br>
- * The reason for doing this is to use this CustomAsyncTask to instead
- * AsyncTask, because AsyncTask can not be used in other thread except UI thread
- * see {@link AsyncTask}
+ * Custom AsyncTask , the same as AsyncTask, but it can be created in other</br>
+ * Thread both UI Thread or not. And more , it use {@link CustomExecutor} to manage the thread executor.<br/>
+ * The reason for doing this is to use this CustomAsyncTask to instead</br>
+ * AsyncTask, because AsyncTask can not be used in other thread except UI thread,<br/>
+ * as the {@link AsyncTask#onPreExecute()} will be execute in AsyncTask's create thread,<br/>
+ * and if you create{@link AsyncTask} in a thread which is not main thread and execute it,<br/>
+ * the application will throw {@link RuntimeException#initCause(Throwable)} what you update <br/>
+ * UI not in main thread exception. Learn more: you can see {@link AsyncTask}.
  *
  * @param <Params>
  * @param <Progress>
